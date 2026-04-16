@@ -1,6 +1,0 @@
-node_modules/
-bin/
-target/
-.venv/
-*.Identifier
-*.class
