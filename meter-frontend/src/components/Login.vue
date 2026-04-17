@@ -1,74 +1,85 @@
-<template>
+﻿<template>
   <div class="login-container">
     <div class="glass-panel">
       <div class="brand">
         <div class="icon-pulse">⚡</div>
-        <h2>智能电表行为分析系统</h2>
-        <p class="subtitle">基于 Apache Spark 的分布式流计算平台</p>
+        <h2>智能电表分析系统</h2>
+        <p class="subtitle">基于 Spring Boot 3 + MyBatis + Vue 3</p>
       </div>
 
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="input-wrapper">
           <span class="input-icon">👤</span>
-          <input type="text" v-model="username" placeholder="管理员账号 " required />
+          <input type="text" v-model="username" placeholder="管理员账号" required />
         </div>
-        
+
         <div class="input-wrapper">
           <span class="input-icon">🔒</span>
-          <input type="password" v-model="password" placeholder="系统密码 " required />
+          <input type="password" v-model="password" placeholder="系统密码" required />
         </div>
 
         <button type="submit" class="login-btn" :disabled="isLoggingIn">
           <span v-if="!isLoggingIn">登 录 系 统</span>
-          <span v-else class="loading-text">正在初始化 Spark 节点...</span>
+          <span v-else class="loading-text">正在验证身份...</span>
         </button>
       </form>
 
       <div class="footer-text">
-        <p>数据接入状态: <span class="status-green">正常</span> | 集群节点: <span class="status-green">4 Active</span></p>
+        <p>数据接入状态: <span class="status-green">正常</span> | 节点状态: <span class="status-green">Active</span></p>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref } from "vue"
+import request from "../utils/request"
 
-const emit = defineEmits(['login-success'])
+const emit = defineEmits(["login-success"])
 
-const username = ref('')
-const password = ref('')
+const username = ref("")
+const password = ref("")
 const isLoggingIn = ref(false)
 
-const handleLogin = () => {
-  // 模拟一个高大上的加载过程
+const handleLogin = async () => {
   isLoggingIn.value = true
-  
-  setTimeout(() => {
-    // 简单的本地验证演示
-    if (username.value.trim() === 'admin' && password.value.trim() === '123456') {
-      emit('login-success') // 告诉大屏：密码正确，开门！
+  try {
+    const res = await request.post("/auth/login", {
+      username: username.value,
+      password: password.value
+    })
+    
+    if (res.data.code === 200) {
+      // 登录请求成功后，将后端返回的 token 正确存入 localStorage 中
+      localStorage.setItem("spark-meter-token", res.data.token)
+      localStorage.setItem("spark-meter-user", JSON.stringify(res.data.user))
+      
+      alert("登录成功！")
+      emit("login-success")
     } else {
-      alert('⚠️ 账号或密码错误，请重新输入！')
-      isLoggingIn.value = false
+      alert("❌ " + res.data.msg)
     }
-  }, 1500) // 假装后台在验证 1.5 秒
+  } catch (error) {
+    console.error("登录失败:", error)
+    alert("⚠️ 登录请求失败，请检查网络或后端服务")
+  } finally {
+    isLoggingIn.value = false
+  }
 }
 </script>
 
 <style scoped>
-/* 充满科技感的暗黑玻璃态背景 */
 .login-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   background: #0f172a;
-  background-image: 
-    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
-    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+  background-image:
+    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%),
+    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%),
     radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 .glass-panel {
