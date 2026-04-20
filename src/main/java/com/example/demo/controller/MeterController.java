@@ -12,6 +12,11 @@ public class MeterController {
     @Autowired
     private SystemMapper systemMapper;
 
+    @GetMapping("/monitor-list")
+    public List<Map<String, Object>> getMeterMonitorList() {
+        return systemMapper.getMeterMonitorList();
+    }
+
     @GetMapping("/detail/{id}")
     public Map<String, Object> getMeterDetail(@PathVariable String id) {
         Map<String, Object> response = new HashMap<>();
@@ -32,22 +37,21 @@ public class MeterController {
         String dbClusterName = systemMapper.getClusterNameByMeterId(id);
         response.put("clusterLabel", dbClusterName != null ? dbClusterName : "未参与本次 AI 聚类");
 
-        // 3. 检查异常状态 (根据 anomaly_records 表判定)
+        // 3. 检查异常状态
         int anomalyCount = 0;
         try {
             anomalyCount = systemMapper.checkIsAnomaly(id);
         } catch (Exception e) {
-            System.err.println("⚠️ 警告：查询异常表失败，可能表不存在。内容: " + e.getMessage());
+            System.err.println("⚠️ 警告：查询异常表失败: " + e.getMessage());
         }
         boolean isRealAnomaly = anomalyCount > 0;
         response.put("isAnomaly", isRealAnomaly);
         response.put("anomalyLabel", isRealAnomaly ? "⚠️ 3-Sigma 预警：用电骤降" : "✅ 近期体检正常");
 
-        // 4. 从数据库获取真实的 30 天用电历史流水
+        // 4. 获取 30 天历史流水
         List<String> dates = new ArrayList<>();
         List<Double> usages = new ArrayList<>();
-
-        List<Map<String, Object>> historyRecords = systemMapper.getMeter30DaysUsage(id);  
+        List<Map<String, Object>> historyRecords = systemMapper.getMeter30DaysUsage(id);
 
         if (historyRecords != null && !historyRecords.isEmpty()) {
             Collections.reverse(historyRecords);
@@ -56,7 +60,6 @@ public class MeterController {
                 usages.add(Double.valueOf(record.get("dailyUsage").toString()));
             }
         }
-        
         response.put("dates", dates);
         response.put("usages", usages);
 

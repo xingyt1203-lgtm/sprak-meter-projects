@@ -5,29 +5,29 @@
 
   <div v-else class="system-layout">
     
-    <div class="sidebar">
+    <aside class="sidebar">
       <div class="logo-box">
         <div class="logo-icon-bg">
-          <span class="logo-icon"></span>
+          <span class="logo-icon">⚡</span>
         </div>
         <h2>智能电表分析</h2>
       </div>
       
       <ul class="nav-menu">
         <li @click="currentMenu = 'total'" :class="{ active: currentMenu === 'total' }">
-          <span class="menu-icon"></span> 总体数据大屏
+          <span class="menu-icon">📊</span> 总体数据大屏
         </li>
         <li @click="currentMenu = 'monitor'" :class="{ active: currentMenu === 'monitor' }">
-          <span class="menu-icon"></span> 设备状态监控
+          <span class="menu-icon">🖥️</span> 设备状态监控
         </li>
         <li @click="currentMenu = 'load'" :class="{ active: currentMenu === 'load' }">
-          <span class="menu-icon"></span> 用电负荷分析
+          <span class="menu-icon">📈</span> 用电负荷分析
         </li>
         <li @click="currentMenu = 'cluster'" :class="{ active: currentMenu === 'cluster' }">
-          <span class="menu-icon"></span> 聚类与异常监控
+          <span class="menu-icon">🧬</span> 聚类与异常监控
         </li>
         <li @click="currentMenu = 'individual'" :class="{ active: currentMenu === 'individual' }">
-          <span class="menu-icon"></span> 个体画像检索
+          <span class="menu-icon">👤</span> 个体画像检索
         </li>
       </ul>
       
@@ -36,9 +36,9 @@
           🚪 退出系统
         </button>
       </div>
-    </div>
+    </aside>
 
-    <div class="main-content">
+    <main class="main-content">
       
       <div v-if="currentMenu === 'total'" class="content-wrapper animated-fade-up" style="flex-direction: column;">
         <div class="stat-cards">
@@ -116,7 +116,6 @@
             <div class="kpi-value highlight-green">{{ computedLoadRate }} <span class="unit">%</span></div>
           </div>
         </div>
-
         <div class="chart-box premium-shadow" style="flex: 1;">
           <div id="line-chart" style="width: 100%; height: 600px;"></div>
         </div>
@@ -129,12 +128,13 @@
           </div>
           <div id="pie-chart" style="width: 100%; height: 500px;"></div>
         </div>
-
         <div class="table-box premium-shadow" style="flex: 5;">
-          <div class="box-header">
+          <div class="box-header" style="display: flex; gap: 12px; align-items: center;">
             <h3>🚨 3-Sigma 异常行为嫌疑名单</h3>
             <span class="badge badge-danger">⚡ {{ anomalyData.length }} 条高危预警</span>
+            <button class="export-btn" @click="exportToCSV">📥 导出 CSV 报表</button>
           </div>
+          
           <div class="scroll-table custom-scrollbar">
             <div class="table-header">
               <span style="width: 120px;">终端编号</span>
@@ -159,20 +159,15 @@
           <div class="box-header" style="justify-content: center; margin-bottom: 30px; border-bottom: none;">
             <h3 style="font-size: 24px; color: #0f172a; font-weight: 800;">🔍 个体用电画像与异常追踪系统</h3>
           </div>
-
+          
           <div class="search-bar-container">
             <div class="search-input-wrapper">
               <span class="search-icon">🔎</span>
-              <input 
-                type="text" 
-                v-model="searchMeterId" 
-                placeholder="请输入终端编号 (如: METER_024)..."
-                @keyup.enter="handleSearch"
-              />
+              <input type="text" v-model="searchMeterId" placeholder="请输入终端编号 (例如: METER_024)..." @keyup.enter="handleSearch" />
             </div>
             <button class="search-btn" @click="handleSearch">全网检索</button>
           </div>
-
+          
           <div v-if="showProfile" class="profile-dashboard animated-fade-up">
             <div class="profile-sidebar">
               <div class="profile-avatar">
@@ -188,37 +183,35 @@
                 <p class="info-label">📍 安装地址</p>
                 <div class="info-value" style="font-size: 14px; font-weight: 600; padding: 4px 0;">{{ currentAddress }}</div>
               </div>
-
               <div class="profile-info-group">
                 <p class="info-label">📟 电表类型</p>
                 <div class="info-value" style="font-size: 14px; font-weight: 600; padding: 4px 0;">{{ currentMeterType }}</div>
               </div>
-
+              
               <hr style="border: none; border-top: 1px dashed #cbd5e1; margin: 10px 0;">
               
               <div class="profile-info-group">
                 <p class="info-label">K-Means 画像定性</p>
                 <div class="info-value label-blue">{{ currentClusterLabel }}</div>
               </div>
-              
               <div class="profile-info-group">
                 <p class="info-label">近期安全体检</p>
                 <div class="info-value" :class="isAnomalyUser ? 'label-red' : 'label-green'">
                   {{ currentAnomalyLabel }}
                 </div>
               </div>
-
+              
               <div v-if="isAnomalyUser" class="warning-box">
                 <strong>⚠️ 稽查预警系统：</strong><br>
                 发现该户存在异常耗电，已触发二级预警，请安排网格员现场核实。
               </div>
             </div>
-
+            
             <div class="profile-chart-area">
               <div id="bar-chart" style="width: 100%; height: 100%; min-height: 400px;"></div>
             </div>
           </div>
-
+          
           <div v-else class="empty-state">
             <div class="empty-icon">💡</div>
             <h2>等待检索指令</h2>
@@ -227,7 +220,7 @@
         </div>
       </div>
 
-    </div>
+    </main>
   </div>
 </template>
 
@@ -238,15 +231,38 @@ import * as echarts from 'echarts'
 import Login from './components/Login.vue' 
 import MeterMonitor from './components/MeterMonitor.vue'
 
-const isAuthenticated = ref(localStorage.getItem('isLogged') === 'true')
+// ==================== Axios 拦截器与基础配置 ====================
+const api = axios.create({ baseURL: 'http://localhost:8080' })
+
+// 请求拦截器：自动在请求头带上 Token
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+}, error => Promise.reject(error))
+
+// 响应拦截器：统一处理 401 鉴权失败，防止白屏死循环
+api.interceptors.response.use(res => res, error => {
+  if (error.response && error.response.status === 401) {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    isAuthenticated.value = false
+    alert("登录状态已失效，请重新登录！")
+  }
+  return Promise.reject(error)
+})
+
+// ==================== 系统全局状态 ====================
+const isAuthenticated = ref(!!localStorage.getItem('token'))
 const currentMenu = ref('total')
+const chartsMap = new Map()
 
-const chartsMap = new Map();
-
-// 各种响应式状态
+// ==================== 数据状态定义 ====================
 const anomalyData = ref([])
-const searchMeterId = ref('') // 🌟 核心修改 2：默认清空输入框，让友好的 placeholder 提示语显示出来
-const displayedMeterId = ref('') // 🌟 核心修改 3：新增专门用于头像下方显示的变量
+const searchMeterId = ref('')
+const displayedMeterId = ref('')
 const showProfile = ref(false) 
 const currentClusterLabel = ref('')
 const currentAnomalyLabel = ref('')
@@ -255,27 +271,19 @@ const currentUserName = ref('')
 const currentAddress = ref('')
 const currentMeterType = ref('')
 
-const cardTotalMeters = ref(1042);
-const cardTotalLoad = ref(9500.5);
-const cardAnomalyCount = ref(3);
-const cardSparkTime = ref(12.4);
+const cardTotalMeters = ref(0)
+const cardTotalLoad = ref(0)
+const cardAnomalyCount = ref(0)
+const cardSparkTime = ref(0)
 
-// 负荷分析 KPI 状态
-const loadDataRaw = ref([]);
-const computedMaxLoad = computed(() => loadDataRaw.value.length ? Math.max(...loadDataRaw.value).toFixed(1) : 0);
-const computedAvgLoad = computed(() => {
-  if (!loadDataRaw.value.length) return 0;
-  return (loadDataRaw.value.reduce((a, b) => a + b, 0) / loadDataRaw.value.length).toFixed(1);
-});
-const computedLoadRate = computed(() => {
-  if (!computedMaxLoad.value || computedMaxLoad.value == 0) return 0;
-  return ((computedAvgLoad.value / computedMaxLoad.value) * 100).toFixed(1);
-});
+const loadDataRaw = ref([])
+const computedMaxLoad = computed(() => loadDataRaw.value.length ? Math.max(...loadDataRaw.value).toFixed(1) : 0)
+const computedAvgLoad = computed(() => loadDataRaw.value.length ? (loadDataRaw.value.reduce((a, b) => a + b, 0) / loadDataRaw.value.length).toFixed(1) : 0)
+const computedLoadRate = computed(() => computedMaxLoad.value > 0 ? ((computedAvgLoad.value / computedMaxLoad.value) * 100).toFixed(1) : 0)
 
-// 登录相关
+// ==================== 登录与登出逻辑 ====================
 const onLoginSuccess = async () => {
   isAuthenticated.value = true
-  localStorage.setItem('isLogged', 'true')
   currentMenu.value = 'total'
   await nextTick() 
   renderTotalCharts()
@@ -283,67 +291,85 @@ const onLoginSuccess = async () => {
 
 const handleLogout = () => {
   if (confirm("系统提示：确认要安全退出大屏分析中心吗？")) {
-    localStorage.removeItem('isLogged');
-    isAuthenticated.value = false;
-    showProfile.value = false;
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    isAuthenticated.value = false
+    showProfile.value = false
   }
 }
 
-// ECharts 初始化防重叠工具
+// ==================== 图表通用工具 ====================
 const initChart = (domId) => {
-  const dom = document.getElementById(domId);
-  if (!dom) return null;
-  let existingChart = echarts.getInstanceByDom(dom);
-  if (existingChart) existingChart.dispose();
-  const chart = echarts.init(dom);
-  chartsMap.set(domId, chart);
-  return chart;
+  const dom = document.getElementById(domId)
+  if (!dom) return null
+  let chart = echarts.getInstanceByDom(dom)
+  if (chart) chart.dispose()
+  chart = echarts.init(dom)
+  chartsMap.set(domId, chart)
+  return chart
 }
 
-// 统一的高级 Tooltip 样式配置
 const premiumTooltip = {
   backgroundColor: 'rgba(255, 255, 255, 0.9)',
-  borderColor: '#e2e8f0',
-  borderWidth: 1,
-  padding: [12, 16],
+  borderColor: '#e2e8f0', borderWidth: 1, padding: [12, 16],
   textStyle: { color: '#1e293b', fontSize: 14, fontFamily: 'PingFang SC' },
   extraCssText: 'box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1); border-radius: 8px; backdrop-filter: blur(8px);'
-};
+}
 
-// ==================== 1. 渲染总体大屏 ====================
+// ==================== 核心功能：纯前端导出 CSV ====================
+const exportToCSV = () => {
+  if (anomalyData.value.length === 0) return alert('当前没有异常数据可供导出！')
+  
+  // 1. 定义中文表头
+  let csvContent = "终端编号,诊断日期,日均耗电(kWh),历史平均(kWh),智能研判结果\n"
+  
+  // 2. 拼接数据行
+  anomalyData.value.forEach(item => {
+    let result = item.daily_usage > item.avg_usage ? '激增异常' : '骤降异常'
+    csvContent += `${item.meter_id},${item.detect_date},${item.daily_usage},${item.avg_usage},${result}\n`
+  })
+
+  // 3. 构造 Blob 并通过浏览器隐藏 a 标签触发下载 (加上 BOM 头防止中文乱码)
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement("a")
+  link.href = URL.createObjectURL(blob)
+  link.download = `异常排查工单报表_${new Date().toISOString().slice(0,10)}.csv`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+// ==================== 菜单渲染逻辑：1. 总体数据大屏 ====================
 const renderTotalCharts = async () => {
   try {
-    const res = await axios.get('http://localhost:8080/api/system/dashboard');
-    const data = res.data;
+    const res = await api.get('/api/system/dashboard')
+    const data = res.data
+    cardTotalMeters.value = data.totalMeters || 0
+    cardTotalLoad.value = data.totalLoad || 0
+    cardAnomalyCount.value = data.anomalyCount || 0
+    cardSparkTime.value = data.sparkTime || 0
 
-    cardTotalMeters.value = data.totalMeters;
-    cardTotalLoad.value = data.totalLoad;
-    cardAnomalyCount.value = data.anomalyCount;
-    cardSparkTime.value = data.sparkTime;
-
-    // 1.1 渲染柱状图
-    const regionChart = initChart('region-chart');
+    // 1. 辖区负荷排行柱状图
+    const regionChart = initChart('region-chart')
     if (regionChart) {
       regionChart.setOption({
         tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, ...premiumTooltip },
         grid: { left: '3%', right: '4%', bottom: '5%', top: '15%', containLabel: true },
-        xAxis: { type: 'category', data: data.regions, axisLine: { lineStyle: { color: '#cbd5e1' } }, axisLabel: { color: '#64748b' } },
+        xAxis: { type: 'category', data: data.regions || [], axisLine: { lineStyle: { color: '#cbd5e1' } }, axisLabel: { color: '#64748b' } },
         yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
         series: [{
-          data: data.regionLoads,
-          type: 'bar',
-          barWidth: '30%', 
+          data: data.regionLoads || [], type: 'bar', barWidth: '30%', 
           showBackground: true, backgroundStyle: { color: '#f8fafc', borderRadius: [6, 6, 0, 0] },
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#60a5fa' }, { offset: 1, color: '#3b82f6' }]),
             borderRadius: [6, 6, 0, 0]
           }
         }]
-      });
+      })
     }
 
-    // 1.2 渲染饼图
-    const deviceChart = initChart('device-chart');
+    // 2. 终端设备在线率饼图
+    const deviceChart = initChart('device-chart')
     if (deviceChart) {
       deviceChart.setOption({
         tooltip: { trigger: 'item', ...premiumTooltip },
@@ -353,148 +379,97 @@ const renderTotalCharts = async () => {
           type: 'pie', radius: ['55%', '75%'], center: ['50%', '42%'], 
           itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 3 },
           label: { show: false }, 
-          data: data.devices 
+          data: data.devices || [] 
         }]
-      });
+      })
     }
 
-    // 1.3 渲染 GIS 动态热力地图
-    const mapChartDom = document.getElementById('map-chart');
+    // 3. 北京市热力分布大地图
+    const mapChartDom = document.getElementById('map-chart')
     if (mapChartDom) {
-      const mapGeoJson = await axios.get('https://geo.datav.aliyun.com/areas_v3/bound/110000_full.json');
-      echarts.registerMap('Beijing', mapGeoJson.data);
-      const mapChart = initChart('map-chart');
+      // 解决地图跨域问题：直接从前端 public 文件夹请求 JSON
+      const mapGeoJson = await axios.get('/beijing.json').catch(() => null)
+      if (mapGeoJson && mapGeoJson.data) {
+        echarts.registerMap('Beijing', mapGeoJson.data)
+        const mapChart = initChart('map-chart')
 
-      const hotPoints = [
-        { name: '朝阳区', value: [116.472288, 39.922811, data.regionLoads[0] || 12500] },
-        { name: '海淀区', value: [116.29812, 39.95931, data.regionLoads[1] || 9800] },
-        { name: '丰台区', value: [116.28625, 39.8585, data.regionLoads[2] || 8500] },
-        { name: '大兴区', value: [116.328053, 39.72665, data.regionLoads[3] || 7200] },
-        { name: '昌平区', value: [116.23128, 40.22066, data.regionLoads[4] || 6000] }
-      ];
+        const regionNames = Array.isArray(data.regions) ? data.regions : []
+        const regionLoads = Array.isArray(data.regionLoads) ? data.regionLoads : []
+        const mapData = regionNames.map((name, idx) => {
+          const n = String(name || '')
+          const fullName = n.endsWith('区') ? n : `${n}区`
+          return { name: fullName, value: Number(regionLoads[idx] ?? 0) }
+        })
+        const maxValue = mapData.length ? Math.max(...mapData.map(i => i.value || 0)) : 1000
 
-      mapChart.setOption({
-        tooltip: {
-          trigger: 'item', ...premiumTooltip, backgroundColor: 'rgba(15, 23, 42, 0.9)', textStyle: { color: '#f8fafc' },
-          formatter: function (params) {
-            if (params.seriesType === 'effectScatter') {
-              return `<strong style="font-size:15px; color:#fff;">📍 ${params.name}</strong><br/>
-                      <span style="color:#94a3b8;">实时负荷:</span> <span style="color:#fbbf24;font-weight:bold;font-size:16px;">${params.value[2]}</span> MW`;
-            }
-            return params.name;
-          }
-        },
-        geo: {
-          map: 'Beijing', roam: true, zoom: 1.1,
-          itemStyle: {
-            areaColor: '#1e293b', 
-            borderColor: '#3b82f6', 
-            borderWidth: 1,
-            shadowColor: 'rgba(59, 130, 246, 0.2)', shadowBlur: 10
+        mapChart.setOption({
+          tooltip: {
+            trigger: 'item', ...premiumTooltip, backgroundColor: 'rgba(15, 23, 42, 0.9)', textStyle: { color: '#f8fafc' },
+            formatter: (params) => `${params.name}<br/>实时负荷: <b>${params.value ?? 0}</b> MW`
           },
-          emphasis: {
-            itemStyle: { areaColor: '#334155' },
-            label: { show: true, color: '#e2e8f0' }
-          }
-        },
-        series: [{
-          name: '高耗能热点', type: 'effectScatter', coordinateSystem: 'geo', data: hotPoints,
-          symbolSize: function (val) { return val[2] / 400; },
-          showEffectOn: 'render',
-          rippleEffect: { brushType: 'stroke', scale: 3 },
-          itemStyle: { color: '#fbbf24', shadowBlur: 15, shadowColor: '#fbbf24' }, 
-          label: { show: true, formatter: '{b}', position: 'right', color: '#f8fafc', fontSize: 12, textBorderColor: '#0f172a', textBorderWidth: 2 },
-          zlevel: 1
-        }]
-      });
+          visualMap: {
+            min: 0, max: maxValue || 1000, left: 20, bottom: 20, calculable: true, orient: 'horizontal',
+            textStyle: { color: '#cbd5e1' }, inRange: { color: ['#1e293b', '#1d4ed8', '#3b82f6', '#93c5fd'] }
+          },
+          series: [{
+            name: '区域负荷', type: 'map', map: 'Beijing', roam: true, zoom: 1.1,
+            label: { show: true, color: '#e2e8f0', fontSize: 11 },
+            itemStyle: { borderColor: '#3b82f6', borderWidth: 1 },
+            emphasis: { label: { color: '#ffffff' }, itemStyle: { areaColor: '#2563eb' } },
+            data: mapData
+          }]
+        })
+      }
     }
+  } catch (error) { console.error("加载大屏数据失败:", error) }
+}
 
-  } catch (error) {
-    console.error("加载大屏数据失败:", error);
-  }
-};
-
-// ==================== 2. 渲染用电负荷 ====================
+// ==================== 菜单渲染逻辑：3. 用电负荷分析 ====================
 const renderLineChart = async () => {
   try {
-    const res = await axios.get('http://localhost:8080/api/system/load');
-    const data = res.data;
-    loadDataRaw.value = data.loads;
-
-    const myChart = initChart('line-chart');
-    if (!myChart) return;
-
-    myChart.setOption({
-      title: { 
-        text: '全网用电负荷趋势与 AI 预测', 
-        subtext: 'Powered by PyTorch LSTM Neural Network', 
-        left: '2%', top: '2%', 
-        textStyle: { color: '#0f172a', fontSize: 20, fontWeight: 800 },
-        subtextStyle: { color: '#8b5cf6', fontWeight: 'bold' } 
-      },
-      legend: { 
-        data: ['今日实际负荷', '明日 LSTM 预测'], 
-        top: '2%', right: '5%',
-        icon: 'roundRect',
-        textStyle: { color: '#64748b' }
-      },
-      tooltip: { 
-        trigger: 'axis', 
-        ...premiumTooltip,
-        formatter: function (params) {
-          let time = params[0].name;
-          let html = `<div style="font-weight:bold; border-bottom:1px solid #e2e8f0; padding-bottom:8px; margin-bottom:8px; color:#0f172a;">时间：${time}</div>`;
-          params.forEach(p => {
-            let color = p.seriesName.includes('预测') ? '#f59e0b' : '#3b82f6';
-            let label = p.seriesName.includes('预测') ? '🔮 预测值' : '📊 实际值';
-            html += `<div style="margin: 6px 0; display:flex; justify-content:space-between; width: 140px;">
-                       <span style="color:${color}; font-weight:600;">${label}</span> 
-                       <span style="font-size:15px; font-weight:bold; color:#0f172a;">${p.value} <span style="font-size:12px; font-weight:normal; color:#64748b;">MW</span></span>
-                     </div>`;
-          });
-          return html;
-        }
-      },
-      grid: { left: '3%', right: '4%', bottom: '5%', top: '20%', containLabel: true },
-      xAxis: { type: 'category', boundaryGap: false, data: data.hours, axisLabel: { color: '#64748b' }, axisLine: { lineStyle: { color: '#cbd5e1' } } },
-      yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
-      series: [
-        {
-          name: '今日实际负荷', type: 'line', smooth: true, showSymbol: false,
-          lineStyle: { width: 4, color: '#3b82f6', shadowColor: 'rgba(59, 130, 246, 0.3)', shadowBlur: 8 },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(59, 130, 246, 0.2)' }, { offset: 1, color: 'rgba(59, 130, 246, 0.01)' }
-            ])
-          },
-          data: data.loads
+    const res = await api.get('/api/system/load')
+    const data = res.data
+    loadDataRaw.value = data.loads || []
+    const myChart = initChart('line-chart')
+    if (myChart) {
+      myChart.setOption({
+        title: { 
+          text: '全网用电负荷趋势与 AI 预测', 
+          subtext: 'Powered by PyTorch LSTM Neural Network', 
+          left: '2%', top: '2%', 
+          textStyle: { color: '#0f172a', fontSize: 20, fontWeight: 800 },
+          subtextStyle: { color: '#8b5cf6', fontWeight: 'bold' } 
         },
-        {
-          name: '明日 LSTM 预测', type: 'line', smooth: true, showSymbol: false,
-          lineStyle: { width: 3, type: 'dashed', color: '#f59e0b', shadowColor: 'rgba(245, 158, 11, 0.3)', shadowBlur: 8 },
-          data: data.forecasts,
-          markPoint: {
-            data: [ { type: 'max', name: '明日预测峰值', itemStyle: { color: '#ef4444' } } ],
-            label: { formatter: '预测极值\n{c}', color: '#fff', fontSize: 11 }
+        legend: { data: ['今日实际负荷', '明日 LSTM 预测'], top: '2%', right: '5%', icon: 'roundRect', textStyle: { color: '#64748b' } },
+        tooltip: { trigger: 'axis', ...premiumTooltip },
+        grid: { left: '3%', right: '4%', bottom: '5%', top: '20%', containLabel: true },
+        xAxis: { type: 'category', boundaryGap: false, data: data.hours || [], axisLabel: { color: '#64748b' }, axisLine: { lineStyle: { color: '#cbd5e1' } } },
+        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
+        series: [
+          {
+            name: '今日实际负荷', type: 'line', smooth: true, showSymbol: false,
+            lineStyle: { width: 4, color: '#3b82f6', shadowColor: 'rgba(59, 130, 246, 0.3)', shadowBlur: 8 },
+            areaStyle: { color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: 'rgba(59, 130, 246, 0.2)' }, { offset: 1, color: 'rgba(59, 130, 246, 0.01)' }]) },
+            data: data.loads || []
+          },
+          {
+            name: '明日 LSTM 预测', type: 'line', smooth: true, showSymbol: false,
+            lineStyle: { width: 3, type: 'dashed', color: '#f59e0b', shadowColor: 'rgba(245, 158, 11, 0.3)', shadowBlur: 8 },
+            data: data.forecasts || []
           }
-        }
-      ]
-    });
-  } catch (error) {
-    console.error("加载负荷数据失败:", error);
-  }
-};
+        ]
+      })
+    }
+  } catch (error) { console.error("加载负荷数据失败:", error) }
+}
 
-// ==================== 3. 渲染聚类画像 ====================
+// ==================== 菜单渲染逻辑：4. 聚类与异常监控 ====================
 const renderClusterCharts = async () => {
   try {
-    const resTable = await axios.get('http://localhost:8080/api/cluster/anomaly')
-    anomalyData.value = resTable.data
-
-    const resDist = await axios.get('http://localhost:8080/api/cluster/distribution')
-    const chartData = resDist.data; 
-
-    const myChart = initChart('pie-chart');
+    const resTable = await api.get('/api/cluster/anomaly')
+    anomalyData.value = resTable.data || []
+    const resDist = await api.get('/api/cluster/distribution')
+    const myChart = initChart('pie-chart')
     if (myChart) {
       myChart.setOption({
         tooltip: { trigger: 'item', ...premiumTooltip },
@@ -504,131 +479,147 @@ const renderClusterCharts = async () => {
           type: 'pie', radius: ['45%', '70%'], center: ['50%', '42%'], 
           itemStyle: { borderRadius: 12, borderColor: '#fff', borderWidth: 4, shadowColor: 'rgba(0,0,0,0.05)', shadowBlur: 10 },
           label: { show: false },
-          data: chartData
+          data: resDist.data || []
         }]
       })
     }
-  } catch (error) {
-    console.error("加载聚类数据失败:", error)
-  }
+  } catch (error) { console.error("加载聚类数据失败:", error) }
 }
 
-// ==================== 4. 渲染个体画像 ====================
+// ==================== 菜单渲染逻辑：5. 个体画像检索 ====================
 const handleSearch = async () => {
-  if (!searchMeterId.value) return alert('请输入电表ID！');
+  if (!searchMeterId.value) return alert('请输入需要检索的终端编号！')
   try {
-    const res = await axios.get(`http://localhost:8080/api/meter/detail?id=${searchMeterId.value}`);
-    const realData = res.data; 
-
-    displayedMeterId.value = searchMeterId.value;
+    const res = await api.get(`/api/meter/detail?id=${searchMeterId.value}`)
+    const realData = res.data || {}
     
-    // 🌟 接收真实姓名和地址
-    currentUserName.value = realData.userName;
-    currentAddress.value = realData.address;
-    currentMeterType.value = realData.meterType;
-
-    currentClusterLabel.value = realData.clusterLabel;
-    currentAnomalyLabel.value = realData.anomalyLabel;
-    isAnomalyUser.value = realData.isAnomaly;
-
-    showProfile.value = true; 
-    await nextTick(); 
+    displayedMeterId.value = searchMeterId.value
+    currentUserName.value = realData.userName || '未知'
+    currentAddress.value = realData.address || '未知地址'
+    currentMeterType.value = realData.meterType || '普通智能表'
+    currentClusterLabel.value = realData.clusterLabel || '暂无画像数据'
+    currentAnomalyLabel.value = realData.anomalyLabel || '状态正常'
+    isAnomalyUser.value = !!realData.isAnomaly
+    
+    showProfile.value = true
+    await nextTick()
     
     setTimeout(() => {
-      const myChart = initChart('bar-chart');
-      if (!myChart) return;
-      myChart.setOption({
-        title: { text: '近 30 天耗电走势 (kWh)', textStyle: { fontSize: 16, color: '#0f172a', fontWeight: 700 }, padding: [10, 0, 20, 10] },
-        tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, ...premiumTooltip },
-        grid: { left: '2%', right: '4%', bottom: '5%', top: '20%', containLabel: true },
-        xAxis: { type: 'category', data: realData.dates, axisLine: { lineStyle: { color: '#cbd5e1' } }, axisLabel: { color: '#64748b' } },
-        yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
-        series: [{
-          data: realData.usages, type: 'bar', barWidth: '40%',
-          itemStyle: {
-            color: (params) => params.value < 20 ? '#fca5a5' : new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#818cf8' }, { offset: 1, color: '#4f46e5' }]),
-            borderRadius: [4, 4, 0, 0]
-          }
-        }]
-      });
-    }, 150);
-
-  } catch (error) {
-    console.error("检索失败:", error);
-    alert("该个体画像接口暂未开发，敬请期待！");
+      const myChart = initChart('bar-chart')
+      if (myChart) {
+        myChart.setOption({
+          title: { text: '近 30 天耗电走势 (kWh)', textStyle: { fontSize: 16, color: '#0f172a', fontWeight: 700 }, padding: [10, 0, 20, 10] },
+          tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' }, ...premiumTooltip },
+          grid: { left: '2%', right: '4%', bottom: '5%', top: '20%', containLabel: true },
+          xAxis: { type: 'category', data: realData.dates || [], axisLine: { lineStyle: { color: '#cbd5e1' } }, axisLabel: { color: '#64748b' } },
+          yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } }, axisLabel: { color: '#64748b' } },
+          series: [{
+            data: realData.usages || [], type: 'bar', barWidth: '40%',
+            itemStyle: {
+              color: (params) => params.value < 20 ? '#fca5a5' : new echarts.graphic.LinearGradient(0, 0, 0, 1, [{ offset: 0, color: '#818cf8' }, { offset: 1, color: '#4f46e5' }]),
+              borderRadius: [4, 4, 0, 0]
+            }
+          }]
+        })
+      }
+    }, 150)
+  } catch (error) { 
+    console.error("检索个体数据失败:", error)
   }
-};
+}
 
 // ==================== 路由与监听 ====================
 onMounted(async () => {
   if (isAuthenticated.value) {
     await nextTick()
-    renderTotalCharts() 
+    renderTotalCharts()
   }
+  // 监听窗口大小变化，图表自动重新渲染防重叠
   window.addEventListener('resize', () => {
-    chartsMap.forEach(chart => { if(chart) chart.resize(); });
-  });
+    chartsMap.forEach(chart => { if (chart) chart.resize() })
+  })
 })
 
 watch(currentMenu, async (newMenu) => {
-  await nextTick(); 
-  if (newMenu === 'total') renderTotalCharts(); 
-  else if (newMenu === 'load') renderLineChart(); 
-  else if (newMenu === 'cluster') renderClusterCharts();
-  else if (newMenu === 'individual' && showProfile.value) handleSearch();
-});
+  await nextTick()
+  if (newMenu === 'total') renderTotalCharts()
+  else if (newMenu === 'load') renderLineChart()
+  else if (newMenu === 'cluster') renderClusterCharts()
+  else if (newMenu === 'individual' && showProfile.value) handleSearch()
+})
 </script>
 
 <style scoped>
-/* ================= 全局 & 动画 ================= */
+/* ================= 全局与重置 ================= */
 :global(html), :global(body), :global(#app) {
-  margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden; box-sizing: border-box;
+  margin: 0; padding: 0; width: 100vw; min-height: 100vh; overflow: hidden; box-sizing: border-box;
 }
-:global(*) { box-sizing: border-box; }
-body { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; background: #f4f7fe; }
+:global(*) {
+  box-sizing: border-box;
+}
+:global(body) {
+  font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background: radial-gradient(circle at top, rgba(59,130,246,0.15), transparent 28%), #eef4ff;
+  color: #0f172a;
+}
 
+/* 渐入动画 */
 .animated-fade-up { animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.status-dot-danger { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
 
+/* 自定义优美滚动条 */
 .custom-scrollbar::-webkit-scrollbar { width: 6px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
 .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-/* ================= 布局 ================= */
-.login-wrapper { display: flex; justify-content: center; align-items: center; height: 100vh; background: #f8fafc; }
-.system-layout { display: flex; height: 100vh; width: 100vw; background: #f4f7fe; overflow: hidden; }
-
-/* ================= 高级侧边栏 ================= */
-.sidebar {
-  width: 280px; height: 100vh;
-  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); 
-  color: #fff; display: flex; flex-direction: column;
-  box-shadow: 4px 0 24px rgba(0,0,0,0.06); z-index: 10;
+/* ================= 主布局 ================= */
+.login-wrapper {
+  display: flex; justify-content: center; align-items: center; min-height: 100vh;
+  background: linear-gradient(180deg, #e2e8ff 0%, #eff6ff 100%);
+}
+.system-layout {
+  display: flex; height: 100vh; width: 100vw; overflow: hidden;
 }
 
-.logo-box { padding: 32px 24px; display: flex; align-items: center; gap: 16px; margin-bottom: 10px;}
-.logo-icon-bg { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 10px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(59,130,246,0.3);}
-.logo-icon { font-size: 20px; color: #fff;} 
-.logo-box h2 { margin: 0; font-size: 20px; font-weight: 800; color: #f8fafc; letter-spacing: 0.5px;}
+/* ================= 侧边栏 ================= */
+.sidebar {
+  width: 280px; min-width: 280px; height: 100vh;
+  background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); 
+  color: #fff; display: flex; flex-direction: column;
+  box-shadow: 4px 0 34px rgba(0,0,0,0.06); z-index: 10;
+}
+.logo-box {
+  padding: 32px 24px; display: flex; align-items: center; gap: 16px; margin-bottom: 10px;
+}
+.logo-icon-bg {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 10px; 
+  border-radius: 12px; display: flex; align-items: center; justify-content: center; 
+  box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+}
+.logo-icon { font-size: 20px; color: #fff; } 
+.logo-box h2 {
+  margin: 0; font-size: 20px; font-weight: 800; color: #f8fafc; letter-spacing: 0.5px;
+}
 
-.nav-menu { list-style: none; padding: 0 16px; margin: 0; flex-grow: 1; display: flex; flex-direction: column; gap: 6px;}
+.nav-menu {
+  list-style: none; padding: 0 16px; margin: 0; flex-grow: 1; display: flex; flex-direction: column; gap: 6px;
+}
 .nav-menu li { 
   padding: 16px 20px; font-size: 15px; cursor: pointer; 
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); border-radius: 12px; color: #94a3b8;
   display: flex; align-items: center; gap: 14px; font-weight: 600;
 }
-.nav-menu li:hover { color: #fff; background: rgba(255,255,255,0.06); transform: translateX(4px); }
+.nav-menu li:hover {
+  color: #fff; background: rgba(255,255,255,0.06); transform: translateX(4px);
+}
 .menu-icon { font-size: 20px; }
-
 .nav-menu li.active { 
   background: linear-gradient(90deg, #3b82f6, #2563eb); 
-  color: #fff; 
-  box-shadow: 0 8px 20px -4px rgba(59, 130, 246, 0.4);
+  color: #fff; box-shadow: 0 8px 20px -4px rgba(59, 130, 246, 0.4);
 }
 
 .logout-container { padding: 24px; }
@@ -637,14 +628,18 @@ body { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; backg
   border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; font-size: 15px; 
   cursor: pointer; transition: all 0.3s; font-weight: 600;
 }
-.logout-btn:hover { background: #ef4444; color: white; border-color: #ef4444; box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.3); }
+.logout-btn:hover {
+  background: #ef4444; color: white; border-color: #ef4444; 
+  box-shadow: 0 8px 16px -4px rgba(239, 68, 68, 0.3);
+}
 
-/* ================= 右侧主内容区 & 卡片容器 ================= */
+/* ================= 右侧主内容区 ================= */
 .main-content {
   flex: 1; height: 100vh; padding: 32px 40px; overflow-y: auto; background: #f4f7fe; 
 }
 .content-wrapper { display: flex; gap: 24px; min-height: calc(100vh - 64px); }
 
+/* 通用白板盒子模型 */
 .chart-box, .card, .table-box {
   background: #ffffff; border-radius: 20px; padding: 24px;
 }
@@ -654,10 +649,10 @@ body { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; backg
 }
 .premium-shadow:hover { box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.08); }
 
-/* ================= 四大 KPI 卡片 ================= */
-.stat-cards { display: flex; gap: 24px; margin-bottom: 24px; }
+/* ================= 顶部 KPI 数据卡片 ================= */
+.stat-cards { display: flex; gap: 24px; margin-bottom: 24px; width: 100%;}
 .card { 
-  flex: 1; display: flex; align-items: center; gap: 20px; 
+  flex: 1; display: flex; align-items: center; gap: 20px; min-width: 200px;
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.05); border: 1px solid rgba(226, 232, 240, 0.6); 
   position: relative; overflow: hidden; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -668,12 +663,15 @@ body { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; backg
 .card-red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
 .card-teal::before { background: linear-gradient(90deg, #14b8a6, #2dd4bf); }
 
-.card-icon { width: 68px; height: 68px; border-radius: 18px; background: #eff6ff; color: #3b82f6; font-size: 30px; display: flex; justify-content: center; align-items: center; }
+.card-icon {
+  width: 68px; height: 68px; border-radius: 18px; background: #eff6ff; 
+  color: #3b82f6; font-size: 30px; display: flex; justify-content: center; align-items: center;
+}
 .card-info p { margin: 0 0 8px 0; color: #64748b; font-size: 14px; font-weight: 600;}
 .card-info h3 { margin: 0; color: #0f172a; font-size: 30px; font-weight: 800; letter-spacing: -0.5px;}
 .unit { font-size: 15px; color: #94a3b8; font-weight: 600; margin-left: 4px;}
 
-/* ================= 负荷页面 KPI ================= */
+/* 负荷分析专用大数字卡片 */
 .kpi-card { flex-direction: column; justify-content: center; align-items: flex-start; gap: 12px; padding: 28px 24px; }
 .kpi-card::before { width: 6px; height: 100%; border-radius: 6px 0 0 6px;}
 .kpi-card:nth-child(1)::before { background: #ef4444; }
@@ -683,8 +681,11 @@ body { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; backg
 .kpi-value { font-size: 40px; font-weight: 900; padding-left: 12px; letter-spacing: -1px;}
 .highlight-red { color: #ef4444; } .highlight-blue { color: #3b82f6; } .highlight-green { color: #10b981; }
 
-/* ================= 图表盒子 Header ================= */
-.box-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(226, 232, 240, 0.6);}
+/* ================= 盒子 Header 样式 ================= */
+.box-header {
+  display: flex; justify-content: space-between; align-items: center; 
+  margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+}
 .box-header h3 { margin: 0; color: #0f172a; font-size: 18px; font-weight: 800; }
 .badge { font-size: 12px; padding: 6px 12px; background: #f1f5f9; color: #475569; border-radius: 20px; font-weight: 700;}
 .badge-danger { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca;}
@@ -694,14 +695,31 @@ body { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; backg
 .map-header h3 { color: #f8fafc; }
 .map-header { border-bottom: 1px solid rgba(255,255,255,0.1); }
 
+/* ================= 导出按钮样式 ================= */
+.export-btn {
+  background: #10b981; color: white; border: none; padding: 8px 16px; 
+  border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; 
+  transition: all 0.3s; margin-left: 10px; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
+}
+.export-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); }
+
 /* ================= 表格美化 ================= */
 .scroll-table { flex-grow: 1; overflow-y: auto; padding-right: 8px; }
-.table-header { display: flex; justify-content: space-between; padding: 14px 20px; background: #f8fafc; border-radius: 12px; font-size: 14px; font-weight: 700; color: #475569; margin-bottom: 12px; border: 1px solid #e2e8f0;}
-.data-row { display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; transition: all 0.2s ease; border-radius: 12px;}
+.table-header {
+  display: flex; justify-content: space-between; padding: 14px 20px; background: #f8fafc; 
+  border-radius: 12px; font-size: 14px; font-weight: 700; color: #475569; margin-bottom: 12px; border: 1px solid #e2e8f0;
+}
+.data-row {
+  display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; 
+  border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; transition: all 0.2s ease; border-radius: 12px;
+}
 .data-row:hover { background: #f8fafc; transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.02);}
 .meter-id { font-weight: 800; color: #0f172a; width: 120px; font-family: monospace; font-size: 15px;}
 .date, .usage { width: 100px; text-align: center; font-weight: 500; }
-.tag { padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; min-width: 100px;}
+.tag {
+  padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 800; 
+  display: inline-flex; align-items: center; justify-content: center; min-width: 100px;
+}
 .tag-down { background: #fef9c3; color: #a16207; }
 .tag-up { background: #fee2e2; color: #b91c1c; }
 
@@ -709,25 +727,50 @@ body { font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif; backg
 .search-bar-container { display: flex; justify-content: center; gap: 16px; margin-bottom: 40px; }
 .search-input-wrapper { position: relative; width: 480px; }
 .search-icon { position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #94a3b8; }
-.search-input-wrapper input { width: 100%; padding: 18px 24px 18px 54px; border: 2px solid #e2e8f0; border-radius: 16px; font-size: 16px; background: #f8fafc; outline: none; transition: all 0.3s; color: #0f172a; font-weight: 500;}
+.search-input-wrapper input {
+  width: 100%; padding: 18px 24px 18px 54px; border: 2px solid #e2e8f0; border-radius: 16px; 
+  font-size: 16px; background: #f8fafc; outline: none; transition: all 0.3s; color: #0f172a; font-weight: 500;
+}
 .search-input-wrapper input:focus { border-color: #3b82f6; background: #fff; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
-.search-btn { padding: 0 36px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.3); transition: all 0.3s;}
+.search-btn {
+  padding: 0 36px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); 
+  color: #fff; border: none; border-radius: 16px; font-size: 16px; font-weight: 700; 
+  cursor: pointer; box-shadow: 0 8px 16px -4px rgba(37, 99, 235, 0.3); transition: all 0.3s;
+}
 .search-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 20px -4px rgba(37, 99, 235, 0.4); }
 
+/* ================= 检索画像卡片 ================= */
 .profile-dashboard { display: flex; gap: 24px; min-height: 480px; }
-.profile-sidebar { width: 320px; background: #f8fafc; border-radius: 20px; padding: 32px; border: 1px solid rgba(226, 232, 240, 0.8); display: flex; flex-direction: column; gap: 24px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5);}
+.profile-sidebar {
+  width: 320px; background: #f8fafc; border-radius: 20px; padding: 32px; 
+  border: 1px solid rgba(226, 232, 240, 0.8); display: flex; flex-direction: column; 
+  gap: 24px; box-shadow: inset 0 2px 4px rgba(255,255,255,0.5);
+}
 .profile-avatar { text-align: center; padding-bottom: 24px; border-bottom: 1px dashed #cbd5e1; }
-.avatar-circle { width: 80px; height: 80px; background: linear-gradient(135deg, #e0e7ff, #c7d2fe); border-radius: 50%; margin: 0 auto 16px; display: flex; justify-content: center; align-items: center; font-size: 36px; border: 4px solid #fff; box-shadow: 0 8px 16px rgba(0,0,0,0.05);}
+.avatar-circle {
+  width: 80px; height: 80px; background: linear-gradient(135deg, #e0e7ff, #c7d2fe); 
+  border-radius: 50%; margin: 0 auto 16px; display: flex; justify-content: center; align-items: center; 
+  font-size: 36px; border: 4px solid #fff; box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+}
 .profile-avatar h4 { margin: 0 0 10px 0; font-size: 22px; color: #0f172a; font-weight: 800;}
 .status-dot { font-size: 13px; padding: 6px 14px; background: #dcfce3; color: #166534; border-radius: 20px; font-weight: 700; border: 1px solid #bbf7d0;}
+.status-dot-danger { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+
 .profile-info-group { display: flex; flex-direction: column; gap: 10px; }
 .info-label { margin: 0; font-size: 14px; color: #64748b; font-weight: 700;}
-.info-value { padding: 10px 16px; border-radius: 10px; font-size: 15px; font-weight: 800; width: fit-content; }
-.label-blue { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
-.label-green { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
-.label-red { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-.warning-box { margin-top: auto; background: #fff1f2; border: 1px solid #fecdd3; padding: 20px; border-radius: 16px; font-size: 14px; color: #be123c; line-height: 1.6; font-weight: 500; box-shadow: 0 4px 12px rgba(225, 29, 72, 0.1);}
+.info-value { padding: 10px 16px; border-radius: 10px; font-size: 15px; font-weight: 800; width: fit-content; background: #fff; border: 1px solid #e2e8f0; }
+.label-blue { background: #eff6ff; color: #2563eb; border-color: #bfdbfe; }
+.label-green { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; }
+.label-red { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+
+.warning-box {
+  margin-top: auto; background: #fff1f2; border: 1px solid #fecdd3; padding: 20px; 
+  border-radius: 16px; font-size: 14px; color: #be123c; line-height: 1.6; font-weight: 500; 
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.1);
+}
 .profile-chart-area { flex: 1; background: #fff; border-radius: 20px; border: 1px solid rgba(226, 232, 240, 0.8); padding: 24px; }
+
+/* 检索前的空状态 */
 .empty-state { text-align: center; padding: 120px 0; color: #94a3b8; }
 .empty-icon { font-size: 70px; margin-bottom: 24px; opacity: 0.8; filter: grayscale(100%); transition: all 0.3s;}
 .empty-state:hover .empty-icon { filter: grayscale(0%); transform: scale(1.1);}

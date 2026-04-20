@@ -36,7 +36,7 @@ public interface SystemMapper {
     List<Map<String, Object>> getUserClusterDistribution();
 
     @Select("SELECT meter_id, detect_date, daily_usage, avg_usage, z_score " +
-            "FROM anomaly_records ORDER BY detect_date DESC LIMIT 50")
+            "FROM anomaly_records ORDER BY detect_date DESC LIMIT 50")      
     List<Map<String, Object>> getAnomalyList();
 
     @Select("SELECT forecast_value FROM sys_load_forecast ORDER BY time_point ASC")
@@ -63,14 +63,22 @@ public interface SystemMapper {
     @Select("SELECT cluster_name FROM cluster_result WHERE meter_id = #{id} LIMIT 1")
     String getClusterNameByMeterId(@Param("id") String id);
 
-    @Select("SELECT COUNT(*) FROM anomaly_records WHERE meter_id = #{id}")
+    @Select("SELECT COUNT(*) FROM anomaly_records WHERE meter_id = #{id}")  
     int checkIsAnomaly(@Param("id") String id);
 
     @Select("SELECT DATE_FORMAT(stat_date, '%m-%d') as recordDate, total_usage as dailyUsage " +
             "FROM daily_usage_stat " +
-            "WHERE meter_id = #{id} ORDER BY stat_date DESC LIMIT 30")
-    List<Map<String, Object>> getMeter30DaysUsage(@Param("id") String id);
+            "WHERE meter_id = #{id} ORDER BY stat_date DESC LIMIT 30")      
+    List<Map<String, Object>> getMeter30DaysUsage(@Param("id") String id);  
 
-    @Select("SELECT COUNT(*) FROM sys_user WHERE username = #{username} AND password = #{password}")
+    @Select("SELECT COUNT(*) FROM sys_user WHERE username = #{username} AND password = #{password} AND status = 1")
     Integer checkUserLogin(@Param("username") String username, @Param("password") String password);
+
+    // 检查账号是否已存在
+    @Select("SELECT COUNT(*) FROM sys_user WHERE username = #{username}")
+    Integer checkUserExists(@Param("username") String username);
+
+    // 注册新用户入库 (默认状态设为 1 正常)
+    @Insert("INSERT INTO sys_user (username, password, real_name, status, create_time) VALUES (#{username}, #{password}, #{realName}, 1, NOW())")
+    void insertNewUser(@Param("username") String username, @Param("password") String password, @Param("realName") String realName);
 }

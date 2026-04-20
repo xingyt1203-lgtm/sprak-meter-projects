@@ -1,169 +1,96 @@
 ﻿<template>
   <div class="login-container">
     <div class="glass-panel">
-      <div class="brand">
-        <div class="icon-pulse">⚡</div>
-        <h2>智能电表分析系统</h2>
-        <p class="subtitle">基于 Spring Boot 3 + MyBatis + Vue 3</p>
-      </div>
-
-      <form @submit.prevent="handleLogin" class="login-form">
+      <h2>{{ isRegister ? '创建新账号' : '系统登录' }}</h2>
+      <form @submit.prevent="handleSubmit" class="login-form">
+        
+        <div v-if="isRegister" class="input-wrapper">
+          <input type="text" v-model="realName" placeholder="真实姓名 (例: 张三)" required />
+        </div>
+        
         <div class="input-wrapper">
-          <span class="input-icon">👤</span>
           <input type="text" v-model="username" placeholder="管理员账号" required />
         </div>
-
+        
         <div class="input-wrapper">
-          <span class="input-icon">🔒</span>
           <input type="password" v-model="password" placeholder="系统密码" required />
         </div>
-
-        <button type="submit" class="login-btn" :disabled="isLoggingIn">
-          <span v-if="!isLoggingIn">登 录 系 统</span>
-          <span v-else class="loading-text">正在验证身份...</span>
+        
+        <button type="submit" class="login-btn" :disabled="isLoading">
+          {{ isLoading ? '处理中...' : (isRegister ? '立 即 注 册' : '登 录 系 统') }}
         </button>
-      </form>
+        
+        <p class="toggle-text" @click="isRegister = !isRegister">
+          {{ isRegister ? '已有账号？点击去登录' : '没有账号？点击去注册' }}
+        </p>
 
-      <div class="footer-text">
-        <p>数据接入状态: <span class="status-green">正常</span> | 节点状态: <span class="status-green">Active</span></p>
-      </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref } from "vue"
-import request from "../utils/request"
+import axios from "axios"
 
 const emit = defineEmits(["login-success"])
 
+// 状态变量
+const isRegister = ref(false) // 默认是登录状态
 const username = ref("")
 const password = ref("")
-const isLoggingIn = ref(false)
+const realName = ref("")
+const isLoading = ref(false)
 
-const handleLogin = async () => {
-  isLoggingIn.value = true
+const handleSubmit = async () => {
+  isLoading.value = true
   try {
-    const res = await request.post("/auth/login", {
-      username: username.value,
-      password: password.value
-    })
-    
-    if (res.data.code === 200) {
-      // 登录请求成功后，将后端返回的 token 正确存入 localStorage 中
-      localStorage.setItem("spark-meter-token", res.data.token)
-      localStorage.setItem("spark-meter-user", JSON.stringify(res.data.user))
-      
-      alert("登录成功！")
-      emit("login-success")
+    if (isRegister.value) {
+      // ========= 走注册流程 =========
+      await axios.post("http://localhost:8080/auth/register", { 
+        username: username.value, 
+        password: password.value, 
+        realName: realName.value 
+      })
+      alert("✅ 注册成功！请使用新账号登录。")
+      // 注册成功后，自动清空密码并切回登录页
+      password.value = ""
+      isRegister.value = false 
     } else {
-      alert("❌ " + res.data.msg)
+      // ========= 走登录流程 =========
+      const res = await axios.post("http://localhost:8080/auth/login", { 
+        username: username.value, 
+        password: password.value 
+      })
+      if (res.data && res.data.token) {
+        localStorage.setItem("token", res.data.token)
+        localStorage.setItem("user", res.data.user || username.value)
+        emit("login-success")
+      }
     }
   } catch (error) {
-    console.error("登录失败:", error)
-    alert("⚠️ 登录请求失败，请检查网络或后端服务")
+    // 错误提示
+    if (error.response && error.response.data) {
+      alert("❌ 失败: " + JSON.stringify(error.response.data))
+    } else {
+      alert("⚠️ 请求失败，请检查后端服务是否启动。")
+    }
   } finally {
-    isLoggingIn.value = false
+    isLoading.value = false
   }
 }
 </script>
 
 <style scoped>
-.login-container {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: #0f172a;
-  background-image:
-    radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%),
-    radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%),
-    radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-}
-
-.glass-panel {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  padding: 50px 40px;
-  border-radius: 20px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  width: 100%;
-  max-width: 420px;
-  text-align: center;
-}
-
-.icon-pulse {
-  font-size: 48px;
-  margin-bottom: 10px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.1); opacity: 1; text-shadow: 0 0 20px #60a5fa; }
-  100% { transform: scale(1); opacity: 0.8; }
-}
-
-h2 { color: #f8fafc; font-size: 24px; margin-bottom: 5px; font-weight: 600; }
-.subtitle { color: #94a3b8; font-size: 14px; margin-bottom: 30px; letter-spacing: 1px; }
-
-.input-wrapper {
-  position: relative;
-  margin-bottom: 20px;
-}
-
-.input-icon {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #94a3b8;
-}
-
-input {
-  width: 100%;
-  padding: 14px 14px 14px 45px;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid #334155;
-  border-radius: 10px;
-  color: #f8fafc;
-  font-size: 15px;
-  box-sizing: border-box;
-  transition: all 0.3s ease;
-}
-
-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
-}
-
-.login-btn {
-  width: 100%;
-  padding: 14px;
-  background: linear-gradient(135deg, #2563eb, #3b82f6);
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  margin-top: 10px;
-}
-
-.login-btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 20px -10px #3b82f6;
-}
-
+.login-container { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: #0f172a; }
+.glass-panel { background: rgba(30, 41, 59, 0.9); padding: 40px; border-radius: 16px; width: 100%; max-width: 400px; text-align: center; color: white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+h2 { margin-bottom: 30px; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
+.input-wrapper { margin-bottom: 20px; }
+input { width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 8px; color: white; box-sizing: border-box; font-size: 15px; outline: none; transition: 0.3s; }
+input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
+.login-btn { width: 100%; padding: 14px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+.login-btn:hover:not(:disabled) { background: #2563eb; transform: translateY(-2px); }
 .login-btn:disabled { background: #475569; cursor: not-allowed; }
-.loading-text { animation: blink 1.5s infinite; }
-@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-.footer-text { margin-top: 30px; font-size: 12px; color: #64748b; }
-.status-green { color: #10b981; font-weight: bold; }
+.toggle-text { margin-top: 24px; color: #94a3b8; cursor: pointer; font-size: 14px; transition: 0.3s; }
+.toggle-text:hover { color: #60a5fa; text-decoration: underline; }
 </style>

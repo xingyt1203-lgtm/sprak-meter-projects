@@ -8,10 +8,8 @@ const service = axios.create({
 // Axios 请求拦截器
 service.interceptors.request.use(
   config => {
-    // 每次发送请求时，自动从 localStorage 中读取 token
-    const token = localStorage.getItem("spark-meter-token")
+    const token = localStorage.getItem("token")
     if (token) {
-      // 并拼接成 Bearer ${token} 放入请求头的 Authorization 中
       config.headers["Authorization"] = `Bearer ${token}`
     }
     return config
@@ -27,16 +25,15 @@ service.interceptors.response.use(
     return response
   },
   error => {
-    // 🚨防坑警告：拦截 HTTP 401 错误时，严禁使用 window.location.reload() 以防止白屏死循环！
     if (error.response && error.response.status === 401) {
-      // 温和地清除 localStorage 中的鉴权数据
-      localStorage.removeItem("spark-meter-token")
-      localStorage.removeItem("spark-meter-user")
-      
-      // 提示用户重新登录
+      // 如果是登录接口报 401，不要弹“登录过期”，让 Login.vue 自己处理
+      if (error.config.url.includes("/auth/login")) {
+        return Promise.reject(error)
+      }
+
+      localStorage.removeItem("token")
+      localStorage.removeItem("user")
       alert("登录已过期，请重新登录")
-      
-      // 将状态设置为未登录
       window.location.href = "/"
     }
     return Promise.reject(error)
