@@ -226,33 +226,11 @@
 
 <script setup>
 import { ref, nextTick, watch, onMounted, computed } from 'vue'
+import api from './utils/request'
 import axios from 'axios'
 import * as echarts from 'echarts'
 import Login from './components/Login.vue' 
 import MeterMonitor from './components/MeterMonitor.vue'
-
-// ==================== Axios 拦截器与基础配置 ====================
-const api = axios.create({ baseURL: 'http://localhost:8080' })
-
-// 请求拦截器：自动在请求头带上 Token
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-}, error => Promise.reject(error))
-
-// 响应拦截器：统一处理 401 鉴权失败，防止白屏死循环
-api.interceptors.response.use(res => res, error => {
-  if (error.response && error.response.status === 401) {
-    localStorage.removeItem('token')
-    localStorage.removeItem('user')
-    isAuthenticated.value = false
-    alert("登录状态已失效，请重新登录！")
-  }
-  return Promise.reject(error)
-})
 
 // ==================== 系统全局状态 ====================
 const isAuthenticated = ref(!!localStorage.getItem('token'))

@@ -56,15 +56,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import axios from 'axios'
-
-// 重新创建一个带 token 的 axios 实例用于此组件
-const api = axios.create({ baseURL: 'http://localhost:8080' })
-api.interceptors.request.use(config => {
-  const token = localStorage.getItem('token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
-  return config
-})
+import api from '../utils/request'
 
 const meterList = ref([])
 const currentFilter = ref('all') 

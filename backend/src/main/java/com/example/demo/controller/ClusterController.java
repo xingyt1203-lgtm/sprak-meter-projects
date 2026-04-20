@@ -1,4 +1,4 @@
-﻿package com.example.demo.controller;
+package com.example.demo.controller;
 
 import com.example.demo.entity.UserCluster;
 import com.example.demo.mapper.UserClusterMapper;

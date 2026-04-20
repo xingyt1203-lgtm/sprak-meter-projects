@@ -1,4 +1,4 @@
-﻿package com.example.demo.controller;
+package com.example.demo.controller;
 
 import com.example.demo.mapper.SystemMapper;
 import com.example.demo.utils.PasswordUtils;

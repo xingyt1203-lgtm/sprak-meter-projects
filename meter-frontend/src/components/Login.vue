@@ -31,7 +31,7 @@
 
 <script setup>
 import { ref } from "vue"
-import axios from "axios"
+import api from "../utils/request"
 
 const emit = defineEmits(["login-success"])
 
@@ -47,7 +47,7 @@ const handleSubmit = async () => {
   try {
     if (isRegister.value) {
       // ========= 走注册流程 =========
-      await axios.post("http://localhost:8080/auth/register", { 
+      await api.post("/auth/register", { 
         username: username.value, 
         password: password.value, 
         realName: realName.value 
@@ -58,7 +58,7 @@ const handleSubmit = async () => {
       isRegister.value = false 
     } else {
       // ========= 走登录流程 =========
-      const res = await axios.post("http://localhost:8080/auth/login", { 
+      const res = await api.post("/auth/login", { 
         username: username.value, 
         password: password.value 
       })
@@ -82,15 +82,16 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-.login-container { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: #0f172a; }
-.glass-panel { background: rgba(30, 41, 59, 0.9); padding: 40px; border-radius: 16px; width: 100%; max-width: 400px; text-align: center; color: white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-h2 { margin-bottom: 30px; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
+.login-container { min-height: 100vh; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at top right, #3b82f6 0%, #1e293b 40%, #0f172a 100%); }
+.glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); padding: 48px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); width: 100%; max-width: 420px; text-align: center; color: white; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); transform: translateY(0); animation: floatUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes floatUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+h2 { margin-bottom: 30px; font-size: 28px; font-weight: 800; letter-spacing: 0.5px; background: linear-gradient(to right, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent;}
 .input-wrapper { margin-bottom: 20px; }
-input { width: 100%; padding: 14px; background: rgba(15, 23, 42, 0.6); border: 1px solid #334155; border-radius: 8px; color: white; box-sizing: border-box; font-size: 15px; outline: none; transition: 0.3s; }
-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3); }
-.login-btn { width: 100%; padding: 14px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
-.login-btn:hover:not(:disabled) { background: #2563eb; transform: translateY(-2px); }
-.login-btn:disabled { background: #475569; cursor: not-allowed; }
-.toggle-text { margin-top: 24px; color: #94a3b8; cursor: pointer; font-size: 14px; transition: 0.3s; }
-.toggle-text:hover { color: #60a5fa; text-decoration: underline; }
+input { width: 100%; padding: 16px; background: rgba(15, 23, 42, 0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px; color: white; box-sizing: border-box; font-size: 15px; outline: none; transition: 0.3s; }
+input:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2); background: rgba(15, 23, 42, 0.8); }
+.login-btn { width: 100%; padding: 16px; margin-top: 10px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 16px; letter-spacing: 1px; transition: 0.3s; box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4); }
+.login-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.6); }
+.login-btn:disabled { background: #475569; box-shadow: none; cursor: not-allowed; }
+.toggle-text { margin-top: 24px; color: #94a3b8; cursor: pointer; font-size: 14px; transition: 0.3s; font-weight: 500; }
+.toggle-text:hover { color: #60a5fa; }
 </style>
