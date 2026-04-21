@@ -53,7 +53,7 @@
             <div class="card-icon" style="background: #ecfdf5; color: #10b981;">⚡</div>
             <div class="card-info">
               <p>今日全网总负荷</p>
-              <h3>{{ cardTotalLoad }} <span class="unit">MWh</span></h3>
+              <h3>{{ cardTotalLoad }} <span class="unit">kWh</span></h3>
             </div>
           </div>
           <div class="card card-red">
@@ -105,11 +105,11 @@
         <div class="stat-cards">
           <div class="card kpi-card">
             <div class="kpi-title">最大负荷 (Peak Load)</div>
-            <div class="kpi-value highlight-red">{{ computedMaxLoad }} <span class="unit">MW</span></div>
+            <div class="kpi-value highlight-red">{{ computedMaxLoad }} <span class="unit">kW</span></div>
           </div>
           <div class="card kpi-card">
             <div class="kpi-title">平均负荷 (Avg Load)</div>
-            <div class="kpi-value highlight-blue">{{ computedAvgLoad }} <span class="unit">MW</span></div>
+            <div class="kpi-value highlight-blue">{{ computedAvgLoad }} <span class="unit">kW</span></div>
           </div>
           <div class="card kpi-card">
             <div class="kpi-title">日负荷率 (Load Factor)</div>
@@ -117,6 +117,12 @@
           </div>
         </div>
         <div class="chart-box premium-shadow" style="flex: 1;">
+          <div class="box-header" style="margin-bottom: 12px;">
+            <h3>🔄 AI 预测重算控制台</h3>
+            <button class="sync-btn" :disabled="isSyncingForecast" @click="handleManualForecastSync">
+              {{ isSyncingForecast ? '重算中...' : '立即重算预测' }}
+            </button>
+          </div>
           <div id="line-chart" style="width: 100%; height: 600px;"></div>
         </div>
       </div>
@@ -129,27 +135,49 @@
           <div id="pie-chart" style="width: 100%; height: 500px;"></div>
         </div>
         <div class="table-box premium-shadow" style="flex: 5;">
-          <div class="box-header" style="display: flex; gap: 12px; align-items: center;">
+          <div class="box-header" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
             <h3>🚨 3-Sigma 异常行为嫌疑名单</h3>
             <span class="badge badge-danger">⚡ {{ anomalyData.length }} 条高危预警</span>
+            <span class="badge" :class="wsConnected ? 'badge-online' : 'badge-offline'">
+              {{ wsConnected ? '预警通道在线' : '预警通道断开' }}
+            </span>
             <button class="export-btn" @click="exportToCSV">📥 导出 CSV 报表</button>
+          </div>
+
+          <div v-if="liveAlert" class="live-alert-strip">
+            <div>
+              <strong>实时预警：</strong>
+              终端 {{ liveAlert.meterId }} 在 {{ liveAlert.detectDate }} 出现异常，请前往“设备状态监控”页面生成工单。
+            </div>
           </div>
           
           <div class="scroll-table custom-scrollbar">
-            <div class="table-header">
-              <span style="width: 120px;">终端编号</span>
-              <span style="width: 100px; text-align: center;">诊断日期</span>
-              <span style="width: 100px; text-align: center;">日均耗电</span>
-              <span style="width: 120px; text-align: right;">智能研判结果</span>
-            </div>
-            <div v-for="item in anomalyData" :key="item.meter_id" class="data-row">
-              <span class="meter-id">{{ item.meter_id }}</span>
-              <span class="date">{{ item.detect_date }}</span>
-              <span class="usage">{{ item.daily_usage }} kWh</span>
-              <span class="tag" :class="item.daily_usage > item.avg_usage ? 'tag-up' : 'tag-down'">
-                {{ item.daily_usage > item.avg_usage ? '激增 📈' : '骤降 📉' }}
-              </span>
-            </div>
+            <table class="anomaly-table">
+              <thead>
+                <tr>
+                  <th>终端编号</th>
+                  <th>诊断日期</th>
+                  <th>日耗电(kWh)</th>
+                  <th>历史均值(kWh)</th>
+                  <th>Z-Score</th>
+                  <th>智能研判</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="item in anomalyData" :key="`${item.meter_id}@${item.detect_date}`">
+                  <td class="cell-id">{{ item.meter_id }}</td>
+                  <td>{{ item.detect_date }}</td>
+                  <td>{{ item.daily_usage }}</td>
+                  <td>{{ item.avg_usage }}</td>
+                  <td>{{ item.z_score }}</td>
+                  <td>
+                    <span class="tag" :class="item.daily_usage > item.avg_usage ? 'tag-up' : 'tag-down'">
+                      {{ item.daily_usage > item.avg_usage ? '激增' : '骤降' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -225,7 +253,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick, watch, onMounted, computed } from 'vue'
+import { ref, nextTick, watch, onMounted, onUnmounted, computed } from 'vue'
 import api from './utils/request'
 import axios from 'axios'
 import * as echarts from 'echarts'
@@ -253,6 +281,10 @@ const cardTotalMeters = ref(0)
 const cardTotalLoad = ref(0)
 const cardAnomalyCount = ref(0)
 const cardSparkTime = ref(0)
+const isSyncingForecast = ref(false)
+const wsConnected = ref(false)
+const liveAlert = ref(null)
+const alertSocket = ref(null)
 
 const loadDataRaw = ref([])
 const computedMaxLoad = computed(() => loadDataRaw.value.length ? Math.max(...loadDataRaw.value).toFixed(1) : 0)
@@ -265,10 +297,15 @@ const onLoginSuccess = async () => {
   currentMenu.value = 'total'
   await nextTick() 
   renderTotalCharts()
+  connectAlertSocket()
 }
 
 const handleLogout = () => {
   if (confirm("系统提示：确认要安全退出大屏分析中心吗？")) {
+    if (alertSocket.value) {
+      alertSocket.value.close()
+      alertSocket.value = null
+    }
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     isAuthenticated.value = false
@@ -441,6 +478,73 @@ const renderLineChart = async () => {
   } catch (error) { console.error("加载负荷数据失败:", error) }
 }
 
+const handleManualForecastSync = async () => {
+  if (isSyncingForecast.value) return
+  isSyncingForecast.value = true
+  try {
+    const res = await api.post('/api/system/forecast/sync?retrain=true', null, { timeout: 180000 })
+    const data = res.data || {}
+    if (data.code === 200) {
+      await renderLineChart()
+      alert(`预测同步成功，本次写入 ${data.rows ?? 0} 条记录。`)
+    } else {
+      alert(`预测同步失败：${data.msg || '未知错误'}`)
+    }
+  } catch (error) {
+    const msg = error?.response?.data?.msg || error?.message || '请求失败'
+    alert(`预测同步失败：${msg}`)
+  } finally {
+    isSyncingForecast.value = false
+  }
+}
+
+const connectAlertSocket = () => {
+  if (!isAuthenticated.value) return
+  if (alertSocket.value) {
+    alertSocket.value.close()
+  }
+  const socket = new WebSocket('ws://localhost:8080/ws/anomaly-alert')
+  alertSocket.value = socket
+
+  socket.onopen = () => {
+    wsConnected.value = true
+  }
+
+  socket.onmessage = (evt) => {
+    try {
+      const payload = JSON.parse(evt.data || '{}')
+      if (payload.type === 'ANOMALY_ALERT') {
+        liveAlert.value = payload
+        const exists = anomalyData.value.some(
+          i => i.meter_id === payload.meterId && i.detect_date === payload.detectDate
+        )
+        if (!exists) {
+          anomalyData.value.unshift({
+            meter_id: payload.meterId,
+            detect_date: payload.detectDate,
+            daily_usage: payload.dailyUsage,
+            avg_usage: payload.avgUsage,
+            z_score: payload.zScore
+          })
+        }
+      }
+    } catch (e) {
+      console.error('解析实时预警失败', e)
+    }
+  }
+
+  socket.onclose = () => {
+    wsConnected.value = false
+    if (isAuthenticated.value) {
+      setTimeout(() => connectAlertSocket(), 3000)
+    }
+  }
+
+  socket.onerror = () => {
+    wsConnected.value = false
+  }
+}
+
 // ==================== 菜单渲染逻辑：4. 聚类与异常监控 ====================
 const renderClusterCharts = async () => {
   try {
@@ -511,11 +615,19 @@ onMounted(async () => {
   if (isAuthenticated.value) {
     await nextTick()
     renderTotalCharts()
+    connectAlertSocket()
   }
   // 监听窗口大小变化，图表自动重新渲染防重叠
   window.addEventListener('resize', () => {
     chartsMap.forEach(chart => { if (chart) chart.resize() })
   })
+})
+
+onUnmounted(() => {
+  if (alertSocket.value) {
+    alertSocket.value.close()
+    alertSocket.value = null
+  }
 })
 
 watch(currentMenu, async (newMenu) => {
@@ -667,6 +779,8 @@ watch(currentMenu, async (newMenu) => {
 .box-header h3 { margin: 0; color: #0f172a; font-size: 18px; font-weight: 800; }
 .badge { font-size: 12px; padding: 6px 12px; background: #f1f5f9; color: #475569; border-radius: 20px; font-weight: 700;}
 .badge-danger { background: #fef2f2; color: #ef4444; border: 1px solid #fecaca;}
+.badge-online { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.badge-offline { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
 
 /* Map 专用深色 Header 适配 */
 .map-container { background: #0f172a; border: none; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
@@ -681,25 +795,95 @@ watch(currentMenu, async (newMenu) => {
 }
 .export-btn:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3); }
 
+.sync-btn {
+  background: #3b82f6;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+}
+
+.sync-btn:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.sync-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 /* ================= 表格美化 ================= */
 .scroll-table { flex-grow: 1; overflow-y: auto; padding-right: 8px; }
-.table-header {
-  display: flex; justify-content: space-between; padding: 14px 20px; background: #f8fafc; 
-  border-radius: 12px; font-size: 14px; font-weight: 700; color: #475569; margin-bottom: 12px; border: 1px solid #e2e8f0;
+.live-alert-strip {
+  margin-bottom: 12px;
+  border-radius: 12px;
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #9a3412;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
 }
-.data-row {
-  display: flex; justify-content: space-between; align-items: center; padding: 18px 20px; 
-  border-bottom: 1px solid #f1f5f9; font-size: 14px; color: #334155; transition: all 0.2s ease; border-radius: 12px;
+.anomaly-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  color: #334155;
 }
-.data-row:hover { background: #f8fafc; transform: translateX(4px); box-shadow: 0 4px 12px rgba(0,0,0,0.02);}
-.meter-id { font-weight: 800; color: #0f172a; width: 120px; font-family: monospace; font-size: 15px;}
-.date, .usage { width: 100px; text-align: center; font-weight: 500; }
+.anomaly-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  color: #475569;
+  font-weight: 700;
+  text-align: left;
+  padding: 12px 14px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.anomaly-table tbody td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #f1f5f9;
+}
+.anomaly-table tbody tr:hover {
+  background: #f8fafc;
+}
+.cell-id {
+  font-family: monospace;
+  font-weight: 700;
+  color: #0f172a;
+}
 .tag {
   padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 800; 
   display: inline-flex; align-items: center; justify-content: center; min-width: 100px;
 }
 .tag-down { background: #fef9c3; color: #a16207; }
 .tag-up { background: #fee2e2; color: #b91c1c; }
+.workorder-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.workorder-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
 
 /* ================= 检索系统 ================= */
 .search-bar-container { display: flex; justify-content: center; gap: 16px; margin-bottom: 40px; }

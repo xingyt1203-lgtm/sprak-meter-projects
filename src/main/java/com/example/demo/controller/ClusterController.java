@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.UserCluster;
+import com.example.demo.mapper.SystemMapper;
 import com.example.demo.mapper.UserClusterMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,10 +17,13 @@ public class ClusterController {
     @Autowired
     private UserClusterMapper userClusterMapper;
 
+    @Autowired
+    private SystemMapper systemMapper;
+
     // 获取窃电嫌疑名单
     @GetMapping("/anomaly")
     public List<Map<String, Object>> getAnomaly() {
-        return userClusterMapper.getAnomalyList();
+        return systemMapper.getAnomalyList();
     }
 
     // 访问路径: http://localhost:8080/api/cluster/list

@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 import java.util.List;
 import java.util.Map;
 
@@ -36,8 +37,33 @@ public interface SystemMapper {
     List<Map<String, Object>> getUserClusterDistribution();
 
     @Select("SELECT meter_id, detect_date, daily_usage, avg_usage, z_score " +
-            "FROM anomaly_records ORDER BY detect_date DESC LIMIT 50")      
+            "FROM anomaly_records WHERE IFNULL(is_suspect, 0) = 1 ORDER BY detect_date DESC LIMIT 50")
     List<Map<String, Object>> getAnomalyList();
+
+    @Select("SELECT meter_id, detect_date, daily_usage, avg_usage, z_score " +
+            "FROM anomaly_records WHERE IFNULL(is_suspect, 0) = 1 ORDER BY detect_date DESC, z_score ASC LIMIT #{limit}")
+    List<Map<String, Object>> getLatestSuspectAnomalies(@Param("limit") int limit);
+
+    @Select("SELECT COUNT(*) FROM repair_work_order WHERE meter_id = #{meterId} AND detect_date = #{detectDate}")
+    int countWorkOrderByMeterAndDate(@Param("meterId") String meterId, @Param("detectDate") String detectDate);
+
+        @Select("SELECT DATE_FORMAT(MAX(detect_date), '%Y-%m-%d') FROM anomaly_records WHERE meter_id = #{meterId} AND IFNULL(is_suspect, 0) = 1")
+        String getLatestSuspectDetectDateByMeter(@Param("meterId") String meterId);
+
+    @Insert("INSERT INTO repair_work_order(order_no, meter_id, detect_date, order_status, reason, source, created_at, updated_at) " +
+            "VALUES(#{orderNo}, #{meterId}, #{detectDate}, #{status}, #{reason}, #{source}, NOW(), NOW())")
+    int insertWorkOrder(@Param("orderNo") String orderNo,
+                        @Param("meterId") String meterId,
+                        @Param("detectDate") String detectDate,
+                        @Param("status") String status,
+                        @Param("reason") String reason,
+                        @Param("source") String source);
+
+    @Update("UPDATE repair_work_order SET order_status = #{status}, updated_at = NOW() WHERE order_no = #{orderNo}")
+    int updateWorkOrderStatus(@Param("orderNo") String orderNo, @Param("status") String status);
+
+    @Select("SELECT MIN(load_value) AS minLoad, MAX(load_value) AS maxLoad, AVG(load_value) AS avgLoad FROM sys_load_trend")
+    Map<String, Object> getTrendStats();
 
     @Select("SELECT forecast_value FROM sys_load_forecast ORDER BY time_point ASC")
     List<Double> getLoadForecastList();
@@ -63,7 +89,7 @@ public interface SystemMapper {
     @Select("SELECT cluster_name FROM cluster_result WHERE meter_id = #{id} LIMIT 1")
     String getClusterNameByMeterId(@Param("id") String id);
 
-    @Select("SELECT COUNT(*) FROM anomaly_records WHERE meter_id = #{id}")  
+        @Select("SELECT COUNT(*) FROM anomaly_records WHERE meter_id = #{id} AND IFNULL(is_suspect, 0) = 1")
     int checkIsAnomaly(@Param("id") String id);
 
     @Select("SELECT DATE_FORMAT(stat_date, '%m-%d') as recordDate, total_usage as dailyUsage " +
